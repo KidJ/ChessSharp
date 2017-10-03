@@ -1,0 +1,35 @@
+Tasks
+
+Create board with initial state
+Move a piece on the board, creating a new board state
+
+Write function to generate legal moves for a piece type, assuming empty board.
+
+Make a move and update the board position.
+
+Architectural thoughts
+
+Emphasise functional paradigm, immutable data structures and mathematical functions preferred over any performance concerns.
+
+Piece
+
+Square
+    - 
+
+Board state - Immutable. Contains pieces within a squares.
+theres the space of all potential chess board layouts, and we have a function move which produces another board state
+Move state - extra info about what moves are legal, e.g. en passant, castling
+Game state
+
+Move
+A move by a player. Can be legal or illegal based on Game state.
+
+Pieces
+- legal moves for each piece, given current board state
+- different types of each piece
+- values
+
+Game over conditions
+- checkmate - are we in check, and is the king in check in all other possible next moves for the other player
+- perpetual
+- 50 moves without piece taken
