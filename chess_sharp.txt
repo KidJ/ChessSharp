@@ -1,35 +1,50 @@
-Tasks
+PHASE 0 - board and piece representation
+Able to create a board from a FEN and print to stdout.
 
-Create board with initial state
-Move a piece on the board, creating a new board state
+TASKS
+Create types for board, pieces.
+Create board state from FEN.
+Pretty print board state to string from internal representation.
 
-Write function to generate legal moves for a piece type, assuming empty board.
 
-Make a move and update the board position.
+PHASE 1 - moving pieces
+Able to move pieces in a legal manner by supply (src,dst) square via stdin.
+White/black move in turn. 
+Function to generate legal moves for a piece type, assuming empty board.
+Function to test whether a given move is legal for a given board state.
 
-Architectural thoughts
+TASKS
 
-Emphasise functional paradigm, immutable data structures and mathematical functions preferred over any performance concerns.
+Update board state if the move is legal and print new board state to stdout.
+Represent notion of player turn and check only moving piece of correct colour
+Create move type:
+- can generate a new board state by applying a move if it is legal.
 
-Piece
 
-Square
-    - 
+PHASE 2 - move history
+Move history recorded as game is played. Print move history to stdout on request.
 
-Board state - Immutable. Contains pieces within a squares.
-theres the space of all potential chess board layouts, and we have a function move which produces another board state
-Move state - extra info about what moves are legal, e.g. en passant, castling
-Game state
+FUTURE PHASES ...
 
-Move
-A move by a player. Can be legal or illegal based on Game state.
-
-Pieces
-- legal moves for each piece, given current board state
-- different types of each piece
-- values
-
-Game over conditions
+Game over!
 - checkmate - are we in check, and is the king in check in all other possible next moves for the other player
 - perpetual
 - 50 moves without piece taken
+
+Special moves:
+- castling
+- en passant
+- promotion
+
+Full PGN support
+
+Create unit tests from online game databases.
+
+Web front end for playing - js client, fs server
+
+
+
+
+OVERALL ARCHITECTURE THOUGHTS
+
+Emphasise functional paradigm, immutable data structures and mathematical functions preferred over all else.
