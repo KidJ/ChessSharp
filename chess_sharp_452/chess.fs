@@ -1,16 +1,16 @@
-﻿module chess
+﻿module Chess
 
     type PieceType =
-    | Pawn
-    | Knight
-    | Bishop
-    | Rook
-    | Queen
-    | King
+        | Pawn
+        | Knight
+        | Bishop
+        | Rook
+        | Queen
+        | King
     
     type PieceColour = 
-    | White
-    | Black
+        | White
+        | Black
 
     type Piece =
         {
@@ -18,97 +18,121 @@
             colour : PieceColour
         }
     
-  
-
     type Square =
         {
             file: int
-            rank : int;
+            rank : int
         }
+    
+    let squareNames = 
+        [|
+            "a1"; "a2"; "a3"; "a4"; "a5"; "a6"; "a7"; "a8";
+            "b1"; "b2"; "b3"; "b4"; "b5"; "b6"; "b7"; "b8";
+            "c1"; "c2"; "c3"; "c4"; "c5"; "c6"; "c7"; "c8";
+            "d1"; "d2"; "d3"; "d4"; "d5"; "d6"; "d7"; "d8";
+            "e1"; "e2"; "e3"; "e4"; "e5"; "e6"; "e7"; "e8";
+            "f1"; "f2"; "f3"; "f4"; "f5"; "f6"; "f7"; "f8";
+            "g1"; "g2"; "g3"; "g4"; "g5"; "g6"; "g7"; "g8";
+            "h1"; "h2"; "h3"; "h4"; "h5"; "h6"; "h7"; "h8";
+        |]
 
-    type BoardSquare = Square * (Piece option)
+    // flatten Square to array index
+    //let flatten square : int = 
+    //    square.rank * 8 + square.file
+
+    //// unflatten index to Square
+    //let unflatten index : Square =
+    //    assert ((index > -1) && (index < 64))
+    //    { rank = index / 8; file = index % 8 }
+
+    //let toString bsq = squareNames.[flatten bsq]
+
+    let toIndex (squareName : string) =
+        Array.tryFindIndex (fun s -> s = squareName) squareNames
+        
+    type BoardSquare = Piece option
 
     type Board =
         {
-            squares : BoardSquare list;
-            halfmove : int;
+            squares : BoardSquare array
+            halfmove : int
         }
-        with
-        member this.findSquare f r = 
-            List.find (fun (s,_) -> s = {rank = r; file = f}) this.squares
-
-    //let fromChar (c : char) : Piece = 
-    //    failwith ""
-
-    let toChar (pt : PieceType) =
+    
+    //let emptyBoardSquare : BoardSquare = ( {file = -1; rank = -1}, None )
+    
+    let toChar pt = 
         match pt with
         | Pawn -> 'P'
         | Knight -> 'N'
         | Bishop -> 'B'
         | Rook -> 'R'
-        | Queen -> 'q'
+        | Queen -> 'Q'
         | King -> 'K'
-
-     let value (pt : PieceType) : int =
+    
+    let pieceValue pt =
         match pt with
         | Pawn -> 1
         | Knight -> 3
         | Bishop -> 3
         | Rook -> 5
         | Queen -> 9
-        | King -> 1000 // well something massive anyway...
-
-    let toString (p : Piece) : string =
+        | King -> 1000 // well, something massive anyway...
+    
+    let pieceToString (p : Piece) : string =
         let c = toChar p.pieceType
-        if p.colour = White
-            then string c
-        else c|> System.Char.ToLower |> string
-    
-    //let invalidSquare = { rank = -1; file = -1 }
-    
-    let displaySquare (square : BoardSquare) =
-        match snd square with
-        | Some p -> printf "%A" p.fen
-        | None -> printf " "
-        // hmmmm
-        if (fst square).rank = 1 then
-            printf "\n"
-
-    let printBoard (board : Board) =
-        List.iter displaySquare board.squares
-
-    let fenStart = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" // w KQkq - 0 1"
-    let fenEmpty = "8/8/8/8/8/8/8/8"
-
-    let FENCharIsPiece (c : System.Char) =
-        match c with
-        | 'r' | 'n' | 'b' | 'q' | 'k' | 'p' | 'R' | 'N' | 'B' | 'Q' | 'K' | 'P' -> true
-        | _ -> false
-    
-    // ! TODO - use Seq.collect!
-    let FENCharToBoardSquares (char : System.Char) : seq<BoardSquare> =
-        match char with
-        | char when FENCharIsPiece char -> Seq.init 1 (fun i -> invalidSquare, Some {fen = char})
-        | char when System.Char.IsDigit(char) ->
-            let numempty = int <| System.Char.GetNumericValue(char) 
-            seq {
-                for i in 1..numempty -> (invalidSquare, None)
-            }
-        | _ -> failwith "Invalid char found in FEN."
-
-    let makeRank (fenRank : string) (r : int) : BoardSquare seq =
-        seq {
-            for char in fenRank do
-                yield! FENCharToBoardSquares char
-        } 
-        |> Seq.mapi (fun i (sq,p) -> ({rank = r; file = i}, p) ) // number squares         
-    
-    let makeBoard (fen : string) : Board =
-        let ranks = fen.Split '/' |> Array.toList
-        if ranks.Length = 8 then
-            let sqList = seq { for i in 8 .. 1 do yield! makeRank ranks.[i] i } |> Seq.toList
-            { squares  = sqList; halfmove = 0 }
+        if p.colour = White then
+            string c
         else
-            failwith "Invalid FEN."
+            string <| (c|> System.Char.ToLower)
     
+    let boardSquareToString (bsq : BoardSquare) =
+        match bsq with
+        | Some p -> pieceToString p
+        | None -> " "
+    
+    let printBoardSquare (i : int) (bsq : BoardSquare) =
+        if i % 8 = 0 then printf "\n"
+        printf "%s" (boardSquareToString bsq)
+    
+    let printBoard (board : Board) =
+        Array.iteri (fun i bsq -> printBoardSquare i bsq) board.squares
 
+    let fromFEN (fen : System.Char) : Piece =
+        match fen with
+        | 'p' -> { pieceType = Pawn;    colour = Black }
+        | 'n' -> { pieceType = Knight;  colour = Black }
+        | 'b' -> { pieceType = Bishop;  colour = Black }
+        | 'r' -> { pieceType = Rook;    colour = Black }
+        | 'q' -> { pieceType = Queen;   colour = Black }
+        | 'k' -> { pieceType = King;    colour = Black }
+        | 'P' -> { pieceType = Pawn;    colour = White }
+        | 'N' -> { pieceType = Knight;  colour = White }
+        | 'B' -> { pieceType = Bishop;  colour = White }
+        | 'R' -> { pieceType = Rook;    colour = White }
+        | 'Q' -> { pieceType = Queen;   colour = White }
+        | 'K' -> { pieceType = King;    colour = White }
+        | _ -> failwith "Invalid FEN character for piece."
+    
+    let FENToBoardSquares (char : System.Char) : seq<BoardSquare> =
+        match char with
+        | char when System.Char.IsDigit(char) ->
+            let numEmpty = int <| System.Char.GetNumericValue(char) 
+            if (numEmpty > 0) && (numEmpty < 9) then
+                seq { for i in 1 .. numEmpty -> None }
+            else 
+                failwith "Invalid number of empty squares found in FEN."
+        | _ ->  seq { yield (Some (fromFEN char)) }
+    
+    // Create Board from FEN
+    let makeBoard fen =
+        {
+            squares = fen |> String.filter (fun c -> c <> '/') |> Seq.collect FENToBoardSquares |> Seq.toArray
+            halfmove = 0
+        }
+
+    // Move the piece on src sqaure to dest square.
+    let move (src : string) (dest : string) (board : Board) : Board =
+        let srcSquare = board.[toIndex src]
+        let destSquare = board.[toIndex dest]
+        // TODO match on cases
+        failwith ""
