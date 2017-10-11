@@ -40,11 +40,4 @@ Full PGN support
 
 Create unit tests from online game databases.
 
-Web front end for playing - js client, fs server
-
-
-
-
-OVERALL ARCHITECTURE THOUGHTS
-
-Emphasise functional paradigm, immutable data structures and mathematical functions preferred over all else.
+Investigate making front end using electron.
