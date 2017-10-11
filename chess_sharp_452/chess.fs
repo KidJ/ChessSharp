@@ -90,12 +90,14 @@
         | Some p -> pieceToString p
         | None -> " "
     
-    let printBoardSquare (i : int) (bsq : BoardSquare) =
-        if i % 8 = 0 then printf "\n"
+    let printBoardSquare (bsq : BoardSquare) =
         printf "%s" (boardSquareToString bsq)
     
     let printBoard (board : Board) =
-        Array.iteri (fun i bsq -> printBoardSquare i bsq) board.squares
+        for rank in 7..-1..0 do
+            for file in 0..7 do
+                printBoardSquare board.squares.[8*rank + file]
+                if file = 7 then printf "\n"
 
     let fromFEN (fen : System.Char) : Piece =
         match fen with
@@ -124,15 +126,17 @@
         | _ ->  seq { yield (Some (fromFEN char)) }
     
     // Create Board from FEN
-    let makeBoard fen =
-        {
-            squares = fen |> String.filter (fun c -> c <> '/') |> Seq.collect FENToBoardSquares |> Seq.toArray
+    let makeBoard (fen:string) =
+        // flip ranks as board squares array stores from 1st to 8th rank
+        let flipped = fen.Split('/') |> Seq.ofArray |> Seq.rev |> Seq.concat
+        {    
+            squares = flipped |> Seq.collect FENToBoardSquares |> Seq.toArray
             halfmove = 0
         }
 
     // Move the piece on src sqaure to dest square.
-    let move (src : string) (dest : string) (board : Board) : Board =
-        let srcSquare = board.[toIndex src]
-        let destSquare = board.[toIndex dest]
-        // TODO match on cases
-        failwith ""
+    //let move (src : string) (dest : string) (board : Board) : Board =
+    //    let srcSquare = board.squares.[toIndex src]
+    //    let destSquare = board.squares.[toIndex dest]
+    //    // TODO match on cases
+    //    failwith ""

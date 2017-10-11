@@ -18,11 +18,4 @@ let main args =
     //let b' = Chess.move "e4" b
 
     0
-
-    // while (1)
-    // display board
-    // read move
-    // if "quit", quit app
-    // else
-    //     if legal make it and advance board state, display board
-    //     if illegal print error and 
+    
