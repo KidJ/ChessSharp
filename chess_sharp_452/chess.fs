@@ -55,7 +55,7 @@
     type Board =
         {
             squares : BoardSquare array
-            halfmove : int
+            mutable halfmove : int
         }
     
     //let emptyBoardSquare : BoardSquare = ( {file = -1; rank = -1}, None )
@@ -94,10 +94,12 @@
         printf "%s" (boardSquareToString bsq)
     
     let printBoard (board : Board) =
+        printf "--------\n"
         for rank in 7..-1..0 do
             for file in 0..7 do
                 printBoardSquare board.squares.[8*rank + file]
                 if file = 7 then printf "\n"
+        printf "--------\n"
 
     let fromFEN (fen : System.Char) : Piece =
         match fen with
@@ -133,10 +135,35 @@
             squares = flipped |> Seq.collect FENToBoardSquares |> Seq.toArray
             halfmove = 0
         }
+    
+    let turnColour (board : Board) : PieceColour = 
+        if board.halfmove % 2 = 0 then
+            White
+        else
+            Black
 
-    // Move the piece on src sqaure to dest square.
-    //let move (src : string) (dest : string) (board : Board) : Board option =
-    //    let srcSquare = board.squares.[toIndex src]
-    //    let destSquare = board.squares.[toIndex dest]
-    //    // TODO match on cases
-    //    failwith ""
+    // Move the piece on src square to dest square
+    // requires:
+    // - source and dest squares to be valid pieces
+    // - source square to have a piece belonging to current player
+    // - dest square to either be empty or contain other players piece
+    let tryMove (src : string) (dest : string) (board : Board) : unit =
+        let srcIndex = toIndex src
+        let destIndex = toIndex dest
+        match (srcIndex, destIndex) with
+        | (None,_) | (_,None) | (None,None) -> failwithf "invalid square name(s) passed %s %s" src dest
+        | _ -> 
+            let srcSquare = board.squares.[srcIndex.Value]
+            let destSquare = board.squares.[destIndex.Value]
+            let moveColour = turnColour board
+            if srcSquare.IsSome && srcSquare.Value.colour = moveColour then
+                if not (destSquare.IsSome && (destSquare.Value.colour = moveColour)) then
+                    board.squares.[destIndex.Value] <- srcSquare
+                    board.squares.[srcIndex.Value] <- None
+                    printf "Move succeeded %s -> %s\n" src dest
+                    board.halfmove <- board.halfmove + 1
+                else
+                    failwith "Destination square contains piece of current turn colour"
+            else
+                failwith "Piece at source square not valid for passed move"
+     
