@@ -58,6 +58,31 @@
             mutable halfmove : int
         }
     
+    //let generateMoves
+
+    // (src,dest) squares
+    type Move = Move of string * string
+    type MoveHistory = MoveHistory of Move list
+    
+    let toString (Move (src,dest)) = src + "->" + dest
+
+    let isLegal (board : Board) (move : Move) : bool =
+        failwith ""
+        // does player have a piece on src square?
+        // can the player move this piece to the dest square?
+        //  is it empty or is an opponent piece on it
+
+    let makeMove (board : Board) (move : Move) : Board =
+        failwith ""
+    
+    let move (board : Board) (move : Move) : Board option =
+        // is the move legal for this board?
+        if (isLegal board move) then
+            Some (makeMove board move)
+        else
+            failwithf "Move %s not legal for passed board %s" (toString move) (toFEN board)
+            None
+    
     //let emptyBoardSquare : BoardSquare = ( {file = -1; rank = -1}, None )
     
     let toChar pt = 
@@ -116,6 +141,9 @@
         | 'Q' -> { pieceType = Queen;   colour = White }
         | 'K' -> { pieceType = King;    colour = White }
         | _ -> failwith "Invalid FEN character for piece."
+
+    let toFEN (board : Board) : string =
+        failwith ""
     
     let FENToBoardSquares (char : System.Char) : seq<BoardSquare> =
         match char with
@@ -166,4 +194,10 @@
                     failwith "Destination square contains piece of current turn colour"
             else
                 failwith "Piece at source square not valid for passed move"
+
+     
+
+
+
+
      
