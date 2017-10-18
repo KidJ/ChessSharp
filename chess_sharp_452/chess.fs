@@ -30,7 +30,10 @@
     
     let makeSquare (f : int) (r : int) : Square = { file = f; rank = r }
 
-    let NumSquares = 64
+    let onBoard (square : Square) =
+        square.file >= 0 && square.file <= 7 && square.rank >= 0 && square.rank <= 7
+   
+   let NumSquares = 64
     
     let squareNames = 
         [|
@@ -213,7 +216,6 @@
                     failwith "Destination square contains piece of current turn colour"
             else
                 failwith "Piece at source square not valid for passed move"
-
     
     // Generate list of all possible moves for the given board
     //let generatePossibleMoves (board : Board) : Move [] =
@@ -237,10 +239,19 @@
             | 7 -> [ add sq (makeSquare 0 -1); add sq (makeSquare 0 -2)  ]
             | 1 -> []
             | _ -> [ add sq (makeSquare 0 -1) ]
-        // todo - en passant...
+        // TODO - en passant...
     
     let knightMoves (colour : PieceColour) (sq : Square) : Square list =
-        [ makeSquare 0 1 ]
+        [ 
+            add sq (makeSquare 1 2)
+            add sq (makeSquare 2 1)
+            add sq (makeSquare 2 -1)
+            add sq (makeSquare 1 -2)
+            add sq (makeSquare -1 -2)
+            add sq (makeSquare -2 -1)
+            add sq (makeSquare -2 1)
+            add sq (makeSquare -1 2)
+        ] |> List.filter onBoard
 
     let bishopMoves (colour : PieceColour) (sq : Square) : Square list =
         [ makeSquare 0 1 ]
