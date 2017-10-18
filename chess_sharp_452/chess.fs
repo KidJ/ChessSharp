@@ -17,12 +17,20 @@
             pieceType : PieceType
             colour : PieceColour
         }
-    
+        
     type Square =
         {
             file: int
             rank : int
         }
+    
+    //[CompilationRepresentationAttribute(CompilationRepresentationFlags.ModuleSuffix)]
+    //module Square =
+    let add (a : Square) (b : Square) : Square = { file = a.file + b.file; rank = a.rank + b.rank }
+    
+    let makeSquare (f : int) (r : int) : Square = { file = f; rank = r }
+
+    let NumSquares = 64
     
     let squareNames = 
         [|
@@ -36,11 +44,10 @@
             "a8"; "b8"; "c8"; "d8"; "e8"; "f8"; "g8"; "h8";
         |]
 
-    // flatten Square to array index
-    //let flatten square : int = 
-    //    square.rank * 8 + square.file
+    // flatten to array index
+    let flatten rank file = (rank * 8) + file
 
-    //// unflatten index to Square
+    // unflatten index to Square
     //let unflatten index : Square =
     //    assert ((index > -1) && (index < 64))
     //    { rank = index / 8; file = index % 8 }
@@ -58,32 +65,24 @@
             mutable halfmove : int
         }
     
-    //let generateMoves
-
-    // (src,dest) squares
-    type Move = Move of string * string
+    type Move = Move of string * string // (src,dest) squares
     type MoveHistory = MoveHistory of Move list
-    
-    let toString (Move (src,dest)) = src + "->" + dest
 
-    let isLegal (board : Board) (move : Move) : bool =
-        failwith ""
-        // does player have a piece on src square?
-        // can the player move this piece to the dest square?
-        //  is it empty or is an opponent piece on it
-
-    let makeMove (board : Board) (move : Move) : Board =
-        failwith ""
-    
-    let move (board : Board) (move : Move) : Board option =
-        // is the move legal for this board?
-        if (isLegal board move) then
-            Some (makeMove board move)
-        else
-            failwithf "Move %s not legal for passed board %s" (toString move) (toFEN board)
-            None
-    
-    //let emptyBoardSquare : BoardSquare = ( {file = -1; rank = -1}, None )
+    let fromFEN (fen : System.Char) : Piece =
+        match fen with
+        | 'p' -> { pieceType = Pawn;    colour = Black }
+        | 'n' -> { pieceType = Knight;  colour = Black }
+        | 'b' -> { pieceType = Bishop;  colour = Black }
+        | 'r' -> { pieceType = Rook;    colour = Black }
+        | 'q' -> { pieceType = Queen;   colour = Black }
+        | 'k' -> { pieceType = King;    colour = Black }
+        | 'P' -> { pieceType = Pawn;    colour = White }
+        | 'N' -> { pieceType = Knight;  colour = White }
+        | 'B' -> { pieceType = Bishop;  colour = White }
+        | 'R' -> { pieceType = Rook;    colour = White }
+        | 'Q' -> { pieceType = Queen;   colour = White }
+        | 'K' -> { pieceType = King;    colour = White }
+        | _ -> failwith "Invalid FEN character for piece."
     
     let toChar pt = 
         match pt with
@@ -114,7 +113,45 @@
         match bsq with
         | Some p -> pieceToString p
         | None -> " "
+
+    // TODO - this is actually kinda awkward
+    let toFEN (board : Board) : string =
+        "I am a board fen, no really"
+    //    // need logic for taking multiple sequential empty squares and concatting them
+    //    // for each rank
+    //    // create the string for the rank
+    //    // add string ""
+    //    // if <> rank 0 add "/"
+
+    //    do
+    //        let mutable i = 0
+    //        for rank in 7..-1..0 do
+                  
+
+    //            for file in 0..7 do
+    //                str.[i] <- (boardSquareToString board.squares.[flatten rank file])
+    //                if (file = 7 && not (file <> 0)) then str += "/"
+    //                i <- i + 1
     
+    let toString (Move (src,dest)) = src + "->" + dest
+
+    let isLegal (board : Board) (move : Move) : bool =
+        failwith ""
+        // does player have a piece on src square?
+        // can the player move this piece to the dest square?
+        //  is it empty or is an opponent piece on it
+
+    let makeMove (board : Board) (move : Move) : Board =
+        failwith ""
+    
+    let move (board : Board) (move : Move) : Board option =
+        // is the move legal for this board?
+        if isLegal board move then
+            Some (makeMove board move)
+        else
+            failwithf "Move %s not legal for passed board %s" (toString move) (toFEN board)
+            None
+
     let printBoardSquare (bsq : BoardSquare) =
         printf "%s" (boardSquareToString bsq)
     
@@ -122,28 +159,10 @@
         printf "--------\n"
         for rank in 7..-1..0 do
             for file in 0..7 do
-                printBoardSquare board.squares.[8*rank + file]
+                printBoardSquare board.squares.[flatten rank file]
                 if file = 7 then printf "\n"
         printf "--------\n"
 
-    let fromFEN (fen : System.Char) : Piece =
-        match fen with
-        | 'p' -> { pieceType = Pawn;    colour = Black }
-        | 'n' -> { pieceType = Knight;  colour = Black }
-        | 'b' -> { pieceType = Bishop;  colour = Black }
-        | 'r' -> { pieceType = Rook;    colour = Black }
-        | 'q' -> { pieceType = Queen;   colour = Black }
-        | 'k' -> { pieceType = King;    colour = Black }
-        | 'P' -> { pieceType = Pawn;    colour = White }
-        | 'N' -> { pieceType = Knight;  colour = White }
-        | 'B' -> { pieceType = Bishop;  colour = White }
-        | 'R' -> { pieceType = Rook;    colour = White }
-        | 'Q' -> { pieceType = Queen;   colour = White }
-        | 'K' -> { pieceType = King;    colour = White }
-        | _ -> failwith "Invalid FEN character for piece."
-
-    let toFEN (board : Board) : string =
-        failwith ""
     
     let FENToBoardSquares (char : System.Char) : seq<BoardSquare> =
         match char with
@@ -195,9 +214,52 @@
             else
                 failwith "Piece at source square not valid for passed move"
 
-     
+    
+    // Generate list of all possible moves for the given board
+    //let generatePossibleMoves (board : Board) : Move [] =
+        //[ ]
+        // for each piece of current colour
+        //     for each board square, if is Some p and has colour = current colour
+        //          generateMovesForPiece p
+        //          filter any moves which
+        //          map sequence to generate (src * dest) move strings
+    
+    // Piece generation functions assume empty board, this way they can be either used to generate look up tables which are filtered on board state,  or called directly.
+    let pawnMoves (colour : PieceColour) (sq : Square) : Square list =
+        match colour with
+        | White -> 
+            match sq.rank with
+            | 2 -> [ add sq (makeSquare 0 1); add sq (makeSquare 0 2) ]
+            | 8 -> []
+            | _ -> [ add sq (makeSquare 0 1) ]
+        | Black ->            
+            match sq.rank with
+            | 7 -> [ add sq (makeSquare 0 -1); add sq (makeSquare 0 -2)  ]
+            | 1 -> []
+            | _ -> [ add sq (makeSquare 0 -1) ]
+        // todo - en passant...
+    
+    let knightMoves (colour : PieceColour) (sq : Square) : Square list =
+        [ makeSquare 0 1 ]
 
+    let bishopMoves (colour : PieceColour) (sq : Square) : Square list =
+        [ makeSquare 0 1 ]
+    
+    let rookMoves (colour : PieceColour) (sq : Square) : Square list =
+        [ makeSquare 0 1 ]
 
-
-
-     
+    let queenMoves (colour : PieceColour) (sq : Square) : Square list =
+        [ makeSquare 0 1 ]
+    
+    let kingMoves (colour : PieceColour) (sq : Square) : Square list =
+        [ makeSquare 0 1 ]
+    
+    // given a square and a piece (type & colour), what squares can it move to?
+    let generateMovesForPiece (piece : Piece) (sq : Square) : Square list =
+        match piece.pieceType with
+        | Pawn -> pawnMoves piece.colour sq
+        | Knight -> knightMoves piece.colour sq
+        | Bishop -> bishopMoves piece.colour sq
+        | Rook -> rookMoves piece.colour sq
+        | Queen -> queenMoves piece.colour sq
+        | King -> kingMoves piece.colour sq
