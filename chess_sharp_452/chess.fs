@@ -253,6 +253,36 @@
             add sq (makeSquare -1 2)
         ] |> List.filter onBoard
 
+
+        // rook, bishop, queen and king moves (excluding castling, and capture for the king where he can be recaptured (ie in check))
+        // can share the same logic - f : inputSquare: Square, direction : (int*int), maxSpaces : int, testCheck : bool -> Square list
+        // only requires parameterising the squares, max squares moved and whether check allowed
+        // maybe with the king / check test we special case this anyway...
+
+        // add allowed directions
+        // for each direction
+        //   calculate max steps based on current square to nearest edge of board
+        //   for each step
+        //      if empty 
+        //          add square
+        //      else
+        //          if own piece
+        //              break
+        //          else
+        //              add square
+        //              break
+
+        let genDiagonal (x,y) : Square list =
+            failwithf ""
+
+        let bishopDirections = [ (1, 1); (1,-1); (-1,-1); (-1, 1) ]
+
+        bishopDirections
+        |> List.map
+        |> ...
+            
+        
+
     let bishopMoves (colour : PieceColour) (sq : Square) : Square list =
         [ makeSquare 0 1 ]
     
