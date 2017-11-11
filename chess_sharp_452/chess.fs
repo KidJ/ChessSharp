@@ -1,5 +1,15 @@
 ﻿module Chess
 
+    // todo - core stuff in separate modules
+    type Int2 =
+        {
+            x : int
+            y : int
+        }
+        with
+        static member (*) (i : Int2, a : int) =
+            { x = i.x * a; y = i.y * a }
+
     type PieceType =
         | Pawn
         | Knight
@@ -23,17 +33,18 @@
             file: int
             rank : int
         }
-    
-    //[CompilationRepresentationAttribute(CompilationRepresentationFlags.ModuleSuffix)]
-    //module Square =
-    let add (a : Square) (b : Square) : Square = { file = a.file + b.file; rank = a.rank + b.rank }
+        with
+        static member (+) (left : Square, right : Square) =
+            { file = left.file + right.file; rank = left.rank + right.rank }
+        static member (+) (sq : Square, i : Int2) = 
+            { file = sq.file + i.x; rank = sq.rank + i.y }
     
     let makeSquare (f : int) (r : int) : Square = { file = f; rank = r }
 
     let onBoard (square : Square) =
         square.file >= 0 && square.file <= 7 && square.rank >= 0 && square.rank <= 7
    
-   let NumSquares = 64
+    //let NumSquares = 64
     
     let squareNames = 
         [|
@@ -47,9 +58,6 @@
             "a8"; "b8"; "c8"; "d8"; "e8"; "f8"; "g8"; "h8";
         |]
 
-    // flatten to array index
-    let flatten rank file = (rank * 8) + file
-
     // unflatten index to Square
     //let unflatten index : Square =
     //    assert ((index > -1) && (index < 64))
@@ -57,6 +65,7 @@
 
     //let toString bsq = squareNames.[flatten bsq]
 
+    // slooooow... and now repeating logic from Square -> flattened index
     let toIndex (squareName : string) =
         Array.tryFindIndex (fun s -> s = squareName) squareNames
         
@@ -67,6 +76,10 @@
             squares : BoardSquare array
             mutable halfmove : int
         }
+        with
+        static member private flatten rank file = (rank * 8) + file
+        static member public boardIndex sq = Board.flatten sq.rank sq.file
+        member this.getSquare sq = this.squares.[Board.boardIndex sq]
     
     type Move = Move of string * string // (src,dest) squares
     type MoveHistory = MoveHistory of Move list
@@ -165,7 +178,6 @@
                 printBoardSquare board.squares.[flatten rank file]
                 if file = 7 then printf "\n"
         printf "--------\n"
-
     
     let FENToBoardSquares (char : System.Char) : seq<BoardSquare> =
         match char with
@@ -227,30 +239,30 @@
         //          map sequence to generate (src * dest) move strings
     
     // Piece generation functions assume empty board, this way they can be either used to generate look up tables which are filtered on board state,  or called directly.
-    let pawnMoves (colour : PieceColour) (sq : Square) : Square list =
+    let pawnMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
         match colour with
         | White -> 
             match sq.rank with
-            | 2 -> [ add sq (makeSquare 0 1); add sq (makeSquare 0 2) ]
+            | 2 -> [ sq + (makeSquare 0 1); sq + (makeSquare 0 2) ]
             | 8 -> []
-            | _ -> [ add sq (makeSquare 0 1) ]
+            | _ -> [ sq + (makeSquare 0 1) ]
         | Black ->            
             match sq.rank with
-            | 7 -> [ add sq (makeSquare 0 -1); add sq (makeSquare 0 -2)  ]
+            | 7 -> [ sq + (makeSquare 0 -1); sq + (makeSquare 0 -2)  ]
             | 1 -> []
-            | _ -> [ add sq (makeSquare 0 -1) ]
+            | _ -> [ sq + (makeSquare 0 -1) ]
         // TODO - en passant...
     
-    let knightMoves (colour : PieceColour) (sq : Square) : Square list =
+    let knightMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
         [ 
-            add sq (makeSquare 1 2)
-            add sq (makeSquare 2 1)
-            add sq (makeSquare 2 -1)
-            add sq (makeSquare 1 -2)
-            add sq (makeSquare -1 -2)
-            add sq (makeSquare -2 -1)
-            add sq (makeSquare -2 1)
-            add sq (makeSquare -1 2)
+            sq + (makeSquare 1 2)
+            sq + (makeSquare 2 1)
+            sq + (makeSquare 2 -1)
+            sq + (makeSquare 1 -2)
+            sq + (makeSquare -1 -2)
+            sq + (makeSquare -2 -1)
+            sq + (makeSquare -2 1)
+            sq + (makeSquare -1 2)
         ] |> List.filter onBoard
 
 
@@ -259,48 +271,70 @@
         // only requires parameterising the squares, max squares moved and whether check allowed
         // maybe with the king / check test we special case this anyway...
 
-        // add allowed directions
-        // for each direction
-        //   calculate max steps based on current square to nearest edge of board
-        //   for each step
-        //      if empty 
-        //          add square
-        //      else
-        //          if own piece
-        //              break
-        //          else
-        //              add square
-        //              break
+    // get all valid moves 
+    let movesForDirection (board : Board) (sq: Square) (colour : PieceColour) (dir : Int2) (maxDist : int) : Square list =    
+        let moves = seq { 0 .. 7 }
 
+        //^^ how about instead...
+        // use tryFind to get point at which we should terminate our search
+        // then can just [ 0 .. n ] |> List.map to generate squares for moves?
+
+        /// arf...
+        let moves = []
+        let mutable loop = true
+        let mutable i = 0
+        while loop do
+            // get our square to test
+            i <- i + 1
+            let diri = dir * i
+            let sqTest = sq + (makeSquare diri.x diri.y)
+            if onBoard sqTest then
+                let boardSquare = (board.getSquare sqTest)
+                match boardSquare with
+                | Some piece ->
+                    if piece.colour = colour then
+                        loop <- false
+                    else
+                        moves
+                | None -> 
+                    moves = sqTest :: moves
+            else
+                break
+
+            
+
+            let 
+
+            List.append newsq moves
+                
+        
         let genDiagonal (x,y) : Square list =
             failwithf ""
 
         let bishopDirections = [ (1, 1); (1,-1); (-1,-1); (-1, 1) ]
 
         bishopDirections
-        |> List.map
-        |> ...
-            
-        
+        |> List.map movesForDirection board 
+        //|> ...
 
-    let bishopMoves (colour : PieceColour) (sq : Square) : Square list =
+    let bishopMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
         [ makeSquare 0 1 ]
     
-    let rookMoves (colour : PieceColour) (sq : Square) : Square list =
+    let rookMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
         [ makeSquare 0 1 ]
 
-    let queenMoves (colour : PieceColour) (sq : Square) : Square list =
+    let queenMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
         [ makeSquare 0 1 ]
     
-    let kingMoves (colour : PieceColour) (sq : Square) : Square list =
+    let kingMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
         [ makeSquare 0 1 ]
     
     // given a square and a piece (type & colour), what squares can it move to?
-    let generateMovesForPiece (piece : Piece) (sq : Square) : Square list =
+    let generateMovesForPiece (board : Board) (piece : Piece) (sq : Square) : Square list =
         match piece.pieceType with
-        | Pawn -> pawnMoves piece.colour sq
-        | Knight -> knightMoves piece.colour sq
-        | Bishop -> bishopMoves piece.colour sq
-        | Rook -> rookMoves piece.colour sq
-        | Queen -> queenMoves piece.colour sq
-        | King -> kingMoves piece.colour sq
+        | Pawn -> pawnMoves board piece.colour sq
+        | Knight -> knightMoves board piece.colour sq
+        | Bishop -> bishopMoves board piece.colour sq
+        | Rook -> rookMoves board piece.colour sq
+        | Queen -> queenMoves board piece.colour sq
+        | King -> kingMoves board piece.colour sq
