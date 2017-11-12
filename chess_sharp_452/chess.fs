@@ -1,6 +1,6 @@
 ﻿module Chess
 
-    // todo - core stuff in separate modules
+    // todo - core stuff like this in separate modules
     type Int2 =
         {
             x : int
@@ -23,30 +23,17 @@
     type PieceColour = 
         | White
         | Black
+        with
+        static member toString pc =
+            match pc with
+            | White -> "White"
+            | Black -> "Black"
 
     type Piece =
         {
             pieceType : PieceType
             colour : PieceColour
         }
-        
-    type Square =
-        {
-            file: int
-            rank : int
-        }
-        with
-        static member (+) (left : Square, right : Square) =
-            { file = left.file + right.file; rank = left.rank + right.rank }
-        static member (+) (sq : Square, i : Int2) = 
-            { file = sq.file + i.x; rank = sq.rank + i.y }
-    
-    let makeSquare (f : int) (r : int) : Square = { file = f; rank = r }
-
-    let squareValid (square : Square) =
-        square.file >= 0 && square.file <= 7 && square.rank >= 0 && square.rank <= 7
-   
-    //let NumSquares = 64
     
     let squareNames = 
         [|
@@ -59,19 +46,55 @@
             "a7"; "b7"; "c7"; "d7"; "e7"; "f7"; "g7"; "h7";
             "a8"; "b8"; "c8"; "d8"; "e8"; "f8"; "g8"; "h8";
         |]
+    
+    type Square =
+        {
+            file: int
+            rank : int
+        }
+        with
+        static member (+) (left : Square, right : Square) =
+            { file = left.file + right.file; rank = left.rank + right.rank }
 
-    // unflatten index to Square
-    //let unflatten index : Square =
-    //    assert ((index > -1) && (index < 64))
-    //    { rank = index / 8; file = index % 8 }
+        static member (+) (sq : Square, i : Int2) = 
+            { file = sq.file + i.x; rank = sq.rank + i.y }
 
-    //let toString bsq = squareNames.[flatten bsq]
+        static member flatten f r =
+            (r * 8) + f
 
-    // slooooow... and now repeating logic from Square -> flattened index
-    let toIndex (squareName : string) =
-        Array.tryFindIndex (fun s -> s = squareName) squareNames
-        
+        static member public toBoardIndex (sq : Square) =
+            Square.flatten sq.file sq.rank
+
+        static member fromBoardIndex index = 
+            assert ((index > -1) && (index < 64))
+            { rank = index / 8; file = index % 8 }
+
+        static member toString (sq : Square) : string =
+            squareNames.[Square.toBoardIndex sq]
+
+        static member stringToBoardIndex s =
+            let index = Array.tryFindIndex (fun i -> i = s) squareNames
+            match index with
+            | Some i -> i
+            | None -> failwithf "Invalid square index '%s'" s
+
+        static member fromString s =
+            s |> Square.stringToBoardIndex |> Square.fromBoardIndex
+
+        static member make (f : int) (r : int) : Square =
+            { file = f; rank = r }
+
+    let squareValid (square : Square) =
+        square.file >= 0 && square.file <= 7 && square.rank >= 0 && square.rank <= 7      
+
     type BoardSquare = Piece option
+
+    type Move = string * string // (src,dest) squares
+
+    let containsPieceOfColour (b : BoardSquare) colour = 
+        match b with
+        | Some p -> p.colour = colour
+        | None -> false
 
     type Board =
         {
@@ -79,12 +102,16 @@
             mutable halfmove : int
         }
         with
-        static member public flatten rank file = (rank * 8) + file
-        static member public boardIndex sq = Board.flatten sq.rank sq.file
-        member this.getSquare sq = this.squares.[Board.boardIndex sq]
-    
-    type Move = Move of string * string // (src,dest) squares
-    type MoveHistory = MoveHistory of Move list
+        member this.getSquare sq =
+            this.squares.[Square.toBoardIndex sq]
+        member this.setSquare sq bsq =
+            this.squares.[Square.toBoardIndex sq] <- bsq
+
+    let gatherPiecesForColour (board : Board) (colour : PieceColour) =
+        board.squares
+        |> Array.mapi (fun i bsq -> if (containsPieceOfColour bsq colour) then Some (Square.fromBoardIndex i, bsq.Value) else None)
+        |> Array.choose (fun i -> i)
+        // better way? - need index though
 
     let fromFEN (fen : System.Char) : Piece =
         match fen with
@@ -140,16 +167,6 @@
     //    // create the string for the rank
     //    // add string ""
     //    // if <> rank 0 add "/"
-
-    //    do
-    //        let mutable i = 0
-    //        for rank in 7..-1..0 do
-                  
-
-    //            for file in 0..7 do
-    //                str.[i] <- (boardSquareToString board.squares.[flatten rank file])
-    //                if (file = 7 && not (file <> 0)) then str += "/"
-    //                i <- i + 1
     
     let toString (Move (src,dest)) = src + "->" + dest
 
@@ -177,7 +194,7 @@
         printf "--------\n"
         for rank in 7..-1..0 do
             for file in 0..7 do
-                printBoardSquare board.squares.[Board.flatten rank file]
+                printBoardSquare board.squares.[Square.flatten file rank]
                 if file = 7 then printf "\n"
         printf "--------\n"
     
@@ -206,90 +223,77 @@
         else
             Black
 
-    // Move the piece on src square to dest square
-    // requires:
-    // - source and dest squares to be valid pieces
-    // - source square to have a piece belonging to current player
-    // - dest square to either be empty or contain other players piece
-    let tryMove (src : string) (dest : string) (board : Board) : unit =
-        let srcIndex = toIndex src
-        let destIndex = toIndex dest
-        match (srcIndex, destIndex) with
-        | (None,_) | (_,None) | (None,None) -> failwithf "invalid square name(s) passed %s %s" src dest
-        | _ -> 
-            let srcSquare = board.squares.[srcIndex.Value]
-            let destSquare = board.squares.[destIndex.Value]
-            let moveColour = turnColour board
-            if srcSquare.IsSome && srcSquare.Value.colour = moveColour then
-                if not (destSquare.IsSome && (destSquare.Value.colour = moveColour)) then
-                    board.squares.[destIndex.Value] <- srcSquare
-                    board.squares.[srcIndex.Value] <- None
-                    printf "Move succeeded %s -> %s\n" src dest
-                    board.halfmove <- board.halfmove + 1
-                else
-                    failwith "Destination square contains piece of current turn colour"
-            else
-                failwith "Piece at source square not valid for passed move"
-    
-    // Generate list of all possible moves for the given board
-    //let generatePossibleMoves (board : Board) : Move [] =
-        //[ ]
-        // for each piece of current colour
-        //     for each board square, if is Some p and has colour = current colour
-        //          generateMovesForPiece p
-        //          filter any moves which
-        //          map sequence to generate (src * dest) move strings
-    
+    // pawn, rook, bishop, queen and king moves (excluding castling, and capture for the king where he can be recaptured (ie in check))
+    // can share the same logic - f : inputSquare: Square, direction : (int*int), maxSpaces : int, testCheck : bool -> Square list
+    // only requires parameterising the squares, max squares moved and whether check allowed
+    // maybe with the king / check test we special case this anyway...
     // Piece generation functions assume empty board, this way they can be either used to generate look up tables which are filtered on board state,  or called directly.
-    let pawnMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
-        match colour with
-        | White -> 
-            match sq.rank with
-            | 2 -> [ sq + (makeSquare 0 1); sq + (makeSquare 0 2) ]
-            | 8 -> []
-            | _ -> [ sq + (makeSquare 0 1) ]
-        | Black ->            
-            match sq.rank with
-            | 7 -> [ sq + (makeSquare 0 -1); sq + (makeSquare 0 -2)  ]
-            | 1 -> []
-            | _ -> [ sq + (makeSquare 0 -1) ]
-        // TODO - en passant...
     
-    let knightMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
-        [ 
-            sq + (makeSquare 1 2)
-            sq + (makeSquare 2 1)
-            sq + (makeSquare 2 -1)
-            sq + (makeSquare 1 -2)
-            sq + (makeSquare -1 -2)
-            sq + (makeSquare -2 -1)
-            sq + (makeSquare -2 1)
-            sq + (makeSquare -1 2)
-        ] |> List.filter squareValid
-
-
-        // rook, bishop, queen and king moves (excluding castling, and capture for the king where he can be recaptured (ie in check))
-        // can share the same logic - f : inputSquare: Square, direction : (int*int), maxSpaces : int, testCheck : bool -> Square list
-        // only requires parameterising the squares, max squares moved and whether check allowed
-        // maybe with the king / check test we special case this anyway...
-
+    // can a piece of this colour move to this square?
+    // note that this deliberately ignores origin square, it just looks at whether the square is valid and unoccupied by piece of same colour.
+    let canMoveTo (board : Board) (colour : PieceColour) (sq : Square) : bool =
+        if squareValid sq then
+            match (board.getSquare sq) with
+            | Some p -> p.colour <> colour
+            | None ->  true
+        else 
+            false
 
     // get all valid moves on the board in the passed direction
     let movesForDirection (board : Board) (colour : PieceColour) (sq: Square) (maxDist : int) (dir : Int2) : Square list =    
-        // can a piece of this colour move to this square?
-        // note that this deliberately ignores origin square, it just looks at whether the square is valid and unoccupied by piece of same colour.
-        let canMoveTo (squareTest : Square) : bool =
-            if squareValid squareTest then
-                match (board.getSquare squareTest) with
-                | Some p -> p.colour <> colour
-                | None ->  true
-            else 
-                false
-        
         seq { 1 .. maxDist }
-        |> Seq.map (fun i -> sq + (makeSquare (dir.x * i) (dir.y * i)))
-        |> Seq.takeWhile canMoveTo
+        |> Seq.map (fun i -> sq + (Square.make (dir.x * i) (dir.y * i)))
+        |> Seq.takeWhile (canMoveTo board colour)
         |> List.ofSeq
+
+    let whitePawnForwardMoves board sq = 
+        match sq.rank with
+        | 1 -> movesForDirection board White sq 2 (makeInt2 0 1)
+        | 7 -> [] // this is actually invalid as you would be promoted
+        | _ -> movesForDirection board White sq 1 (makeInt2 0 1)
+
+    let whitePawnDiagonalMoves (board : Board) (sq : Square) =
+        [ sq + (Square.make 1 1); sq + (Square.make -1 1) ]
+        |> List.filter (fun dest -> ((board.getSquare dest).IsSome && ((board.getSquare dest).Value.colour = Black)))
+    
+    let whitePawnEnPassantMoves board sq =
+        [] // TODO
+
+    let whitePawnMoves board sq = 
+        List.concat [ whitePawnForwardMoves board sq; whitePawnDiagonalMoves board sq; whitePawnEnPassantMoves board sq ]
+    
+    let blackPawnForwardMoves board sq = 
+        match sq.rank with
+        | 6 -> movesForDirection board Black sq 2 (makeInt2 0 -1)
+        | 0 -> [] // this is actually invalid as you would be promoted
+        | _ -> movesForDirection board Black sq 1 (makeInt2 0 -1)
+
+    let blackPawnDiagonalMoves (board : Board) (sq : Square) =
+        [ sq + (Square.make 1 -1); sq + (Square.make -1 -1) ]
+        |> List.filter (fun dest -> ((board.getSquare dest).IsSome && ((board.getSquare dest).Value.colour = White)))
+    
+    let blackPawnEnPassantMoves board sq =
+        [] // TODO
+
+    let blackPawnMoves board sq = 
+        List.concat [ blackPawnForwardMoves board sq; blackPawnDiagonalMoves board sq; blackPawnEnPassantMoves board sq ]
+    
+    let pawnMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
+        match colour with
+        | White -> whitePawnMoves board sq
+        | Black -> blackPawnMoves board sq
+
+    let knightMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
+        [ 
+            sq + (Square.make 1 2)
+            sq + (Square.make 2 1)
+            sq + (Square.make 2 -1)
+            sq + (Square.make 1 -2)
+            sq + (Square.make -1 -2)
+            sq + (Square.make -2 -1)
+            sq + (Square.make -2 1)
+            sq + (Square.make -1 2)
+        ] |> List.filter (canMoveTo board colour)
     
     // Always unable to move exactly 8 in any distance, so naturally forms valid termination condition.
     let bishopMoves (board : Board) (colour : PieceColour) (sq : Square) =
@@ -315,7 +319,7 @@
         |> List.map (movesForDirection board colour sq 1)
         |> List.concat
     
-    // given a square and a piece (type & colour), what squares can it move to?
+    // Generate legal moves for a given piece on the passed board.
     let generateMovesForPiece (board : Board) (piece : Piece) (sq : Square) : Square list =
         match piece.pieceType with
         | Pawn -> pawnMoves board piece.colour sq
@@ -324,3 +328,32 @@
         | Rook -> rookMoves board piece.colour sq
         | Queen -> queenMoves board piece.colour sq
         | King -> kingMoves board piece.colour sq
+
+    // Move the piece on src square to dest square
+    // requires:
+    // - source and dest squares to be valid pieces
+    // - source square to have a piece belonging to current player
+    // - dest square to either be empty or contain other players piece
+    let tryMove (board : Board) (src : string) (dest : string) : unit =
+        let srcSquare = Square.fromString src
+        let destSquare = Square.fromString dest
+
+        let srcBoardSquare = board.getSquare srcSquare
+        let destBoardSquare = board.getSquare destSquare
+
+        let moveColour = turnColour board
+
+        if srcBoardSquare.IsSome then
+            if srcBoardSquare.Value.colour = moveColour then
+                let squares = generateMovesForPiece board srcBoardSquare.Value srcSquare
+                if List.contains destSquare squares then
+                    board.setSquare destSquare srcBoardSquare
+                    board.setSquare srcSquare None
+                    printfn "Move succeeded %s -> %s." src dest
+                    board.halfmove <- board.halfmove + 1
+                else
+                    printfn "Invalid move %s -> %s." src dest
+        //    else
+        //        printf "Piece at source square '%s' wrong colour, %A to move."
+        //else
+        //    printf "Piece at source square '%s' not valid for passed move."
