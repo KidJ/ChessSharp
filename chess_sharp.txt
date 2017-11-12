@@ -6,19 +6,18 @@ TASKS
 * Create board state from FEN.
 * Pretty print board state to string from internal representation.
 
-PHASE 1 - Processing legal moves
+----------------------------------------------------------------------------------
+PHASE 1 - Process legal moves
+----------------------------------------------------------------------------------
 * Able to move pieces in a legal manner by supply (src,dst) square
 * White/black move in turn
 
 Function to generate legal moves for a piece type, assuming empty board.
 Function to test whether a given move is legal for a given board state.
 
-take moves from stdin in form (src,dest)
+moves from stdin in form (src,dest)
 
-Moves in standard format - determine square based on possible options & rules
-
-
-TASKS
+Print moves in standard format - determine square based on possible options & rules
 
 Update board state if the move is legal and print new board state to stdout.
 Represent notion of player turn and check only moving piece of correct colour

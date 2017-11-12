@@ -10,6 +10,8 @@
         static member (*) (i : Int2, a : int) =
             { x = i.x * a; y = i.y * a }
 
+    let makeInt2 ix iy = { x = ix; y = iy; }
+
     type PieceType =
         | Pawn
         | Knight
@@ -41,7 +43,7 @@
     
     let makeSquare (f : int) (r : int) : Square = { file = f; rank = r }
 
-    let onBoard (square : Square) =
+    let squareValid (square : Square) =
         square.file >= 0 && square.file <= 7 && square.rank >= 0 && square.rank <= 7
    
     //let NumSquares = 64
@@ -77,7 +79,7 @@
             mutable halfmove : int
         }
         with
-        static member private flatten rank file = (rank * 8) + file
+        static member public flatten rank file = (rank * 8) + file
         static member public boardIndex sq = Board.flatten sq.rank sq.file
         member this.getSquare sq = this.squares.[Board.boardIndex sq]
     
@@ -175,7 +177,7 @@
         printf "--------\n"
         for rank in 7..-1..0 do
             for file in 0..7 do
-                printBoardSquare board.squares.[flatten rank file]
+                printBoardSquare board.squares.[Board.flatten rank file]
                 if file = 7 then printf "\n"
         printf "--------\n"
     
@@ -263,7 +265,7 @@
             sq + (makeSquare -2 -1)
             sq + (makeSquare -2 1)
             sq + (makeSquare -1 2)
-        ] |> List.filter onBoard
+        ] |> List.filter squareValid
 
 
         // rook, bishop, queen and king moves (excluding castling, and capture for the king where he can be recaptured (ie in check))
@@ -271,63 +273,47 @@
         // only requires parameterising the squares, max squares moved and whether check allowed
         // maybe with the king / check test we special case this anyway...
 
-    // get all valid moves 
-    let movesForDirection (board : Board) (sq: Square) (colour : PieceColour) (dir : Int2) (maxDist : int) : Square list =    
-        let moves = seq { 0 .. 7 }
 
-        //^^ how about instead...
-        // use tryFind to get point at which we should terminate our search
-        // then can just [ 0 .. n ] |> List.map to generate squares for moves?
-
-        /// arf...
-        let moves = []
-        let mutable loop = true
-        let mutable i = 0
-        while loop do
-            // get our square to test
-            i <- i + 1
-            let diri = dir * i
-            let sqTest = sq + (makeSquare diri.x diri.y)
-            if onBoard sqTest then
-                let boardSquare = (board.getSquare sqTest)
-                match boardSquare with
-                | Some piece ->
-                    if piece.colour = colour then
-                        loop <- false
-                    else
-                        moves
-                | None -> 
-                    moves = sqTest :: moves
-            else
-                break
-
-            
-
-            let 
-
-            List.append newsq moves
-                
+    // get all valid moves on the board in the passed direction
+    let movesForDirection (board : Board) (colour : PieceColour) (sq: Square) (maxDist : int) (dir : Int2) : Square list =    
+        // can a piece of this colour move to this square?
+        // note that this deliberately ignores origin square, it just looks at whether the square is valid and unoccupied by piece of same colour.
+        let canMoveTo (squareTest : Square) : bool =
+            if squareValid squareTest then
+                match (board.getSquare squareTest) with
+                | Some p -> p.colour <> colour
+                | None ->  true
+            else 
+                false
         
-        let genDiagonal (x,y) : Square list =
-            failwithf ""
-
-        let bishopDirections = [ (1, 1); (1,-1); (-1,-1); (-1, 1) ]
-
-        bishopDirections
-        |> List.map movesForDirection board 
-        //|> ...
-
-    let bishopMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
-        [ makeSquare 0 1 ]
+        seq { 1 .. maxDist }
+        |> Seq.map (fun i -> sq + (makeSquare (dir.x * i) (dir.y * i)))
+        |> Seq.takeWhile canMoveTo
+        |> List.ofSeq
+    
+    // Always unable to move exactly 8 in any distance, so naturally forms valid termination condition.
+    let bishopMoves (board : Board) (colour : PieceColour) (sq : Square) =
+        [ makeInt2 1 1; makeInt2 1 -1; makeInt2 -1 -1; makeInt2 -1 1]
+        |> List.map (movesForDirection board colour sq 8)
+        |> List.concat
     
     let rookMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
-        [ makeSquare 0 1 ]
+        [ makeInt2 1 0; makeInt2 0 -1; makeInt2 -1 0; makeInt2 0 1]
+        |> List.map (movesForDirection board colour sq 8)
+        |> List.concat
 
     let queenMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
-        [ makeSquare 0 1 ]
+        [ makeInt2 1 0; makeInt2 0 -1; makeInt2 -1 0; makeInt2 0 1; makeInt2 1 1; makeInt2 1 -1; makeInt2 -1 -1; makeInt2 -1 1]
+        |> List.map (movesForDirection board colour sq 8)
+        |> List.concat
     
+    // King can only move 1 space
+    // TODO - further filter list for positions where the king isn't in check
+    // check test logic - is there any move where the king is taken?
     let kingMoves (board : Board) (colour : PieceColour) (sq : Square) : Square list =
-        [ makeSquare 0 1 ]
+        [ makeInt2 1 0; makeInt2 0 -1; makeInt2 -1 0; makeInt2 0 1; makeInt2 1 1; makeInt2 1 -1; makeInt2 -1 -1; makeInt2 -1 1]
+        |> List.map (movesForDirection board colour sq 1)
+        |> List.concat
     
     // given a square and a piece (type & colour), what squares can it move to?
     let generateMovesForPiece (board : Board) (piece : Piece) (sq : Square) : Square list =
