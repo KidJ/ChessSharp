@@ -15,22 +15,39 @@ PHASE 1 - Process legal moves
 Function to generate legal moves for a piece type, assuming empty board.
 Function to test whether a given move is legal for a given board state.
 
-moves from stdin in form (src,dest)
-
-Print moves in standard format - determine square based on possible options & rules
-
-Update board state if the move is legal and print new board state to stdout.
-Represent notion of player turn and check only moving piece of correct colour
+--Update board state if the move is legal and print new board state to stdout.
+--Represent notion of player turn and check only moving piece of correct colour
 Create move type:
 - can generate a new board state by applying a move if it is legal.
 
+pass in move via std in
+
+determine check
 
 PHASE 2 - move history
+
 Move history recorded as game is played. Print move history to stdout on request.
+
+How hard will it be to implement proper move formatting?
+
+PHASE 3 - 
+
+PHASE 4 - visuals
+What is the easiest way of doing this?
+Web?
+
 
 FUTURE PHASES ...
 
+Add log4net, use proper logging levels
+Add NUnit support
+Test suite of games
+- confirm reach final FEN?
+
+Print moves in standard format - determine square based on possible options & rules
+
 Game over!
+- check
 - checkmate - are we in check, and is the king in check in all other possible next moves for the other player
 - perpetual
 - 50 moves without piece taken

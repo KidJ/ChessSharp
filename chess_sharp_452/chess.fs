@@ -1,5 +1,7 @@
 ﻿module Chess
 
+    open log4net
+
     // todo - core stuff like this in separate modules
     type Int2 =
         {
@@ -89,7 +91,14 @@
 
     type BoardSquare = Piece option
 
-    type Move = string * string // (src,dest) squares
+    type Move = Move of string * string // (src,dest) squares
+        with
+        static member tryParse (str : string) : Move option = 
+            let strs = str.Split(' ')
+            if strs.Length = 2 && (Array.contains strs.[0] squareNames) && (Array.contains strs.[1] squareNames) then
+                Some (Move (strs.[0], strs.[1]))
+            else
+                None
 
     let containsPieceOfColour (b : BoardSquare) colour = 
         match b with
@@ -334,7 +343,7 @@
     // - source and dest squares to be valid pieces
     // - source square to have a piece belonging to current player
     // - dest square to either be empty or contain other players piece
-    let tryMove (board : Board) (src : string) (dest : string) : unit =
+    let tryMove (board : Board) (Move(src,dest)) : unit =
         let srcSquare = Square.fromString src
         let destSquare = Square.fromString dest
 
