@@ -26,8 +26,8 @@
         | White
         | Black
         with
-        static member toString pc =
-            match pc with
+        override this.ToString() : string =
+            match this with
             | White -> "White"
             | Black -> "Black"
 
@@ -91,12 +91,17 @@
 
     type BoardSquare = Piece option
 
-    type Move = Move of string * string // (src,dest) squares
+    [<StructuredFormatDisplay("{src}->{dest}")>]
+    type Move =
+        {
+            src : string
+            dest : string
+        }
         with
         static member tryParse (str : string) : Move option = 
             let strs = str.Split(' ')
             if strs.Length = 2 && (Array.contains strs.[0] squareNames) && (Array.contains strs.[1] squareNames) then
-                Some (Move (strs.[0], strs.[1]))
+                Some { src = strs.[0]; dest = strs.[1] }
             else
                 None
 
@@ -115,6 +120,8 @@
             this.squares.[Square.toBoardIndex sq]
         member this.setSquare sq bsq =
             this.squares.[Square.toBoardIndex sq] <- bsq
+        member this.IsGameOver () = false
+        member this.ColourToMove = if this.halfmove % 2 = 0 then PieceColour.White else PieceColour.Black
 
     let gatherPiecesForColour (board : Board) (colour : PieceColour) =
         board.squares
@@ -177,7 +184,7 @@
     //    // add string ""
     //    // if <> rank 0 add "/"
     
-    let toString (Move (src,dest)) = src + "->" + dest
+    //let toString (Move (src,dest)) = src + "->" + dest
 
     let isLegal (board : Board) (move : Move) : bool =
         failwith ""
@@ -193,7 +200,7 @@
         if isLegal board move then
             Some (makeMove board move)
         else
-            failwithf "Move %s not legal for passed board %s" (toString move) (toFEN board)
+            failwithf "Move %A not legal for passed board %s" move (toFEN board)
             None
 
     let printBoardSquare (bsq : BoardSquare) =
@@ -338,31 +345,36 @@
         | Queen -> queenMoves board piece.colour sq
         | King -> kingMoves board piece.colour sq
 
+    // generate valid moves for all pieces
+    let generateValidMoves (board : Board) : Move [] =
+        let moveColour = turnColour board
+        let pieces = gatherPiecesForColour board moveColour
+        let validMoves = pieces |> Array.map (fun (sq,p) -> (generateMovesForPiece board p sq) |> List.map (fun sqDest -> {src = (Square.toString sq); dest = (Square.toString sqDest)}) |> List.toArray)
+        validMoves |> Array.concat
+    
     // Move the piece on src square to dest square
     // requires:
     // - source and dest squares to be valid pieces
     // - source square to have a piece belonging to current player
     // - dest square to either be empty or contain other players piece
-    let tryMove (board : Board) (Move(src,dest)) : unit =
-        let srcSquare = Square.fromString src
-        let destSquare = Square.fromString dest
+    let tryMove (board : Board) (move : Move) : bool =
+        let srcSquare = Square.fromString move.src
+        let destSquare = Square.fromString move.dest
 
         let srcBoardSquare = board.getSquare srcSquare
         let destBoardSquare = board.getSquare destSquare
 
         let moveColour = turnColour board
 
+        let prevMove = board.halfmove
         if srcBoardSquare.IsSome then
             if srcBoardSquare.Value.colour = moveColour then
                 let squares = generateMovesForPiece board srcBoardSquare.Value srcSquare
                 if List.contains destSquare squares then
                     board.setSquare destSquare srcBoardSquare
                     board.setSquare srcSquare None
-                    printfn "Move succeeded %s -> %s." src dest
                     board.halfmove <- board.halfmove + 1
-                else
-                    printfn "Invalid move %s -> %s." src dest
-        //    else
-        //        printf "Piece at source square '%s' wrong colour, %A to move."
-        //else
-        //    printf "Piece at source square '%s' not valid for passed move."
+        
+        board.halfmove > prevMove
+    
+    

@@ -27,28 +27,53 @@ let scandinavianMoves =
         ("b1", "c3")
     ]
 
-let playConsole board =
+let fetchLegalMoveFromConsole () : Move =
+    let mutable input = ""
+    let mutable validMove = false
+    let mutable move : Chess.Move option = None
+    while move.IsNone do
+        input <- System.Console.ReadLine()
+        move <- Move.tryParse input
+        if move.IsNone then
+            printfn "Input \"%s\" not a valid move, please try again." input
+    
+    move.Value
+
+let consoleMoveSource (board : Board) : Move =
+    fetchLegalMoveFromConsole()
+
+let randomValidMoveSource (board : Board) : Move =
+    let moves = generateValidMoves board
+    if moves.Length = 0 then failwith "Unable to find valid move!"
+    let random = new System.Random(System.DateTime.Now.Millisecond)
+    moves.[ random.Next(0, moves.Length) ]
+
+let playGame (board : Board) whiteMoveSource blackMoveSource =
+    
+    printfn "GAME ON"
     Chess.printBoard board
 
-    let mutable line = ""
-    
-    while line <> "q" || line <> "quit" do
-        line <- System.Console.ReadLine()
-        printfn "Move \"%s\"." line
-        let move = Move.tryParse line
-        match move with
-        | Some m -> 
-            Chess.tryMove board m
+    while not (board.IsGameOver ()) do
+        // whose move is it?
+        let moveColour = turnColour board
+        let moveSource = if moveColour = PieceColour.White then whiteMoveSource else blackMoveSource
+        printfn "%A to move" moveColour
+
+        // get move from move source
+        let move = moveSource board
+        let validMove = Chess.tryMove board move
+        if validMove then
+            printfn "Move %s." (string move)
             Chess.printBoard board
-        | None -> printfn "Move \"%s\" not legal, please try again." line
+        else
+            printfn "Invalid move %A, please try another." move
 
+let playConsole2Player board =
+    playGame board consoleMoveSource consoleMoveSource
 
-//let line = System.Console.Readline()let playStdin board = 
-    //let input = [0..N-1] |> Seq.map (fun _ -> Console.ReadLine())
-    //let line = System.Console.Readline()
+let playConsolePlayerVersusRandomAI board =
+    playGame board consoleMoveSource randomValidMoveSource
     
-    //if Move.tryPase
-
 [<EntryPoint>]
 let main args = 
 
@@ -57,7 +82,9 @@ let main args =
     
     let board = Chess.makeBoard fenStart
 
-    playConsole board
+    playConsolePlayerVersusRandomAI board
+    //playConsole2Player board
+    //playConsole board
     //playMoves board scandinavianMoves
 
     0
