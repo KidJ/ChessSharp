@@ -1,9 +1,0 @@
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\bin\Debug\chess_sharp_452.exe.config
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\bin\Debug\chess_sharp_452.XML
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\bin\Debug\chess_sharp_452.exe
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\bin\Debug\chess_sharp_452.pdb
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\bin\Debug\FSharp.Core.dll
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\bin\Debug\System.ValueTuple.dll
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\bin\Debug\FSharp.Core.xml
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\obj\Debug\chess_sharp_452.exe
-D:\dev\fsharp\chess_sharp_452\chess_sharp_452\obj\Debug\chess_sharp_452.pdb
