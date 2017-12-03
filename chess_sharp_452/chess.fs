@@ -365,13 +365,12 @@
         // this is tricky due to the board being mutable, and me not knowing how to ensure deep copy of board is taken.
         // brb.
         //|> Array.filter (fun move -> not List.exists (fun ))
-        
 
     // Move the piece on src square to dest square. Requires:
     // - source and dest squares to be valid pieces
     // - source square to have a piece belonging to current player
     // - dest square to either be empty or contain other players piece
-    let tryMove (board : Board) (move : Move) : bool =
+    let internal tryMove (board : Board) (move : Move) : bool =
         let srcSquare = Square.fromString move.src
         let destSquare = Square.fromString move.dest
 
@@ -390,3 +389,10 @@
                     board.halfmove <- board.halfmove + 1
         
         board.halfmove > prevMove
+
+    let tryApplyMove (board : Board) (move : Move) : Board option =
+        let newSquares = Array.copy board.squares
+        let testBoard = { board with squares = newSquares }
+        match (tryMove testBoard move) with
+        | true -> Some testBoard
+        | false -> None

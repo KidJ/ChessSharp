@@ -3,9 +3,14 @@
 open Chess
 
 let playMoves (board : Board) (moves : Move list) =
+    let mutable b = board
     for move in moves do
-        Chess.tryMove board move
-        Chess.printBoard board
+        match Chess.tryApplyMove board move with
+        | Some nextBoard ->
+            Chess.printBoard board
+            b <- nextBoard
+        | None -> 
+            printfn "Illegal move %A" move
 
 let friedLiverMoves = 
     [
@@ -27,47 +32,58 @@ let scandinavianMoves =
         ("b1", "c3")
     ]
 
-let fetchLegalMoveFromConsole () : Move =
+let fetchLegalMoveFromConsole () : Move option =
     let mutable input = ""
-    let mutable validMove = false
     let mutable move : Chess.Move option = None
-    while move.IsNone do
+    while move.IsNone && input <> "quit" do
         input <- System.Console.ReadLine()
-        move <- Move.tryParse input
-        if move.IsNone then
-            printfn "Input \"%s\" not a valid move, please try again." input
-    
-    move.Value
+        if input <> "quit" then
+            move <- Move.tryParse input
+            if move.IsNone then
+                printfn "Input \"%s\" not a valid move." input
+    move
 
-let consoleMoveSource (board : Board) : Move =
+let consoleMoveSource (board : Board) : Move option =
     fetchLegalMoveFromConsole()
 
-let randomValidMoveSource (board : Board) : Move =
+let randomValidMoveSource (board : Board) : Move option =
     let moves = generateValidMoves board
-    if moves.Length = 0 then failwith "Unable to find valid move!"
-    let random = new System.Random(System.DateTime.Now.Millisecond)
-    moves.[ random.Next(0, moves.Length) ]
+    if moves.Length = 0 then
+        None
+    else 
+        let random = new System.Random(System.DateTime.Now.Millisecond)
+        Some moves.[ random.Next(0, moves.Length) ]
 
-let playGame (board : Board) whiteMoveSource blackMoveSource =
-    
+let playGame (startBoard : Board) whiteMoveSource blackMoveSource = 
+    Chess.printBoard startBoard
+
     printfn "GAME ON"
-    Chess.printBoard board
+    let mutable boards = [ startBoard ]
+    let mutable quit = false
 
-    while not (board.IsGameOver ()) do
+    while not ((List.head boards).IsGameOver()) && not quit do
+        let board = List.head boards
+
         // whose move is it?
         let moveColour = turnColour board
         let moveSource = if moveColour = PieceColour.White then whiteMoveSource else blackMoveSource
         printfn "%A to move" moveColour
 
         // get move from move source
-        let move = moveSource board
-        let validMove = Chess.tryMove board move
-        if validMove then
-            printfn "Move %s." (string move)
-            Chess.printBoard board
-        else
-            printfn "Invalid move %A, please try another." move
-
+        match moveSource board with
+        | Some move ->
+            match Chess.tryApplyMove board move with
+            | Some nextBoard ->
+                printfn "Move %A." move
+                Chess.printBoard nextBoard
+                boards <- nextBoard :: boards
+            | None -> 
+                printfn "Invalid move %A, please try another." move
+        | None ->
+            quit <- true
+    
+    printfn "GAME OVER"
+    
 let playConsole2Player board =
     playGame board consoleMoveSource consoleMoveSource
 
