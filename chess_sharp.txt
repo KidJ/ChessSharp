@@ -1,7 +1,7 @@
+----------------------------------------------------------------------------------
 PHASE 0 - board and piece representation
+----------------------------------------------------------------------------------
 * Able to create a board from a FEN and print to stdout.
-
-TASKS
 * Create types for board, pieces.
 * Create board state from FEN.
 * Pretty print board state to string from internal representation.
@@ -11,36 +11,49 @@ PHASE 1 - Process legal moves
 ----------------------------------------------------------------------------------
 * Able to move pieces in a legal manner by supply (src,dst) square
 * White/black move in turn
-
-Function to generate legal moves for a piece type, assuming empty board.
-Function to test whether a given move is legal for a given board state.
-
---Update board state if the move is legal and print new board state to stdout.
---Represent notion of player turn and check only moving piece of correct colour
-Create move type:
-- can generate a new board state by applying a move if it is legal.
-
-pass in move via std in
+* Update board state if the move is legal and print new board state to stdout.
+* Represent notion of player turn and check only moving piece of correct colour
+* Function to generate legal moves for a piece type, assuming empty board.
+* Function to test whether a given move is legal for a given board state.
+* read move from std in
 
 determine check
+	- if opponent moves, could they capture the king?
 
+determine checkmate
+	- for evey move, you are still in check even after you have moved
+
+disallow moving into check
+	- if there exists a move by next player which will capture king
+
+en passant
+	- add a legal move for a single move?
+	- if I tag target square as en passant, then other player can just query this
+
+----------------------------------------------------------------------------------
 PHASE 2 - move history
-
+----------------------------------------------------------------------------------
 Move history recorded as game is played. Print move history to stdout on request.
 
-How hard will it be to implement proper move formatting?
-
-PHASE 3 - 
-
-PHASE 4 - visuals
-What is the easiest way of doing this?
-Web?
+Implement reading / writing move formatting according to PGN
+- add unit tests using existing engines - NUnit
+- chess base?
+- free game database available for lichess, by month https://database.lichess.org/
 
 
+----------------------------------------------------------------------------------
+PHASE 3 - visuals update
+----------------------------------------------------------------------------------
+Aim - play games graphically. Controversial.
+
+What is the easiest way of doing this? Web?
+
+----------------------------------------------------------------------------------
 FUTURE PHASES ...
+----------------------------------------------------------------------------------
 
 Add log4net, use proper logging levels
-Add NUnit support
+NUnit
 Test suite of games
 - confirm reach final FEN?
 
