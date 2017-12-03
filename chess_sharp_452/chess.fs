@@ -358,19 +358,11 @@
         let moves = generateValidMovesForColour board (PieceColour.Other colour)
         moves |> Array.exists (fun move -> (board.getSquare (Square.fromString move.dest)) |> Option.exists (fun piece -> piece.pieceType = PieceType.King))
 
-    // generate valid moves for all pieces
-    let generateValidMoves (board : Board) : Move [] =
-        generateValidMovesForColour board (turnColour board)    
-        // filter out moves which would put us in check...
-        // this is tricky due to the board being mutable, and me not knowing how to ensure deep copy of board is taken.
-        // brb.
-        //|> Array.filter (fun move -> not List.exists (fun ))
-
     // Move the piece on src square to dest square. Requires:
     // - source and dest squares to be valid pieces
     // - source square to have a piece belonging to current player
     // - dest square to either be empty or contain other players piece
-    let internal tryMove (board : Board) (move : Move) : bool =
+    let internal tryMoveInternal (board : Board) (move : Move) : bool =
         let srcSquare = Square.fromString move.src
         let destSquare = Square.fromString move.dest
 
@@ -393,6 +385,14 @@
     let tryApplyMove (board : Board) (move : Move) : Board option =
         let newSquares = Array.copy board.squares
         let testBoard = { board with squares = newSquares }
-        match (tryMove testBoard move) with
+        match (tryMoveInternal testBoard move) with
         | true -> Some testBoard
         | false -> None
+
+    // generate valid moves for all pieces
+    let generateValidMoves (board : Board) : Move [] =
+        let turnColour = (turnColour board)
+        generateValidMovesForColour board turnColour
+        |> Array.filter (fun move -> match tryApplyMove board move with
+                                     | Some b -> not (isInCheck board turnColour)
+                                     | None -> false)

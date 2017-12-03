@@ -98,8 +98,8 @@ let main args =
     
     let board = Chess.makeBoard fenStart
 
-    playConsolePlayerVersusRandomAI board
-    //playConsole2Player board
+    //playConsolePlayerVersusRandomAI board
+    playConsole2Player board
     //playConsole board
     //playMoves board scandinavianMoves
 
