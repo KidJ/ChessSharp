@@ -20,15 +20,26 @@ PHASE 1 - Process legal moves
 determine check
 	- if opponent moves, could they capture the king?
 
+disallow moving into check
+	- if there exists a move by next player which will capture king
+
 determine checkmate
 	- for evey move, you are still in check even after you have moved
 
-disallow moving into check
-	- if there exists a move by next player which will capture king
+castling
+	- moving 2 pieces
 
 en passant
 	- add a legal move for a single move?
 	- if I tag target square as en passant, then other player can just query this
+
+promotion
+	- move pawn, make new piece of specified type
+
+perpetual
+	- repeated same move 3 times
+	- 50 moves without piece taken
+
 
 ----------------------------------------------------------------------------------
 PHASE 2 - move history
@@ -58,17 +69,6 @@ Test suite of games
 - confirm reach final FEN?
 
 Print moves in standard format - determine square based on possible options & rules
-
-Game over!
-- check
-- checkmate - are we in check, and is the king in check in all other possible next moves for the other player
-- perpetual
-- 50 moves without piece taken
-
-Special moves:
-- castling
-- en passant
-- promotion
 
 Full PGN support
 
