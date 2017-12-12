@@ -349,15 +349,6 @@
         | Queen -> queenMoves board piece.colour sq
         | King -> kingMoves board piece.colour sq
 
-    let internal generateValidMovesForColour (board : Board) (colour : PieceColour) : Move[] = 
-        let pieces = gatherPiecesForColour board colour
-        let validMoves = pieces |> Array.map (fun (sq,p) -> (generateMovesForPiece board p sq) |> List.map (fun sqDest -> {src = (Square.toString sq); dest = (Square.toString sqDest)}) |> List.toArray)
-        validMoves |> Array.concat
-
-    let isInCheck (board : Board) (colour : PieceColour) : bool =
-        let moves = generateValidMovesForColour board (PieceColour.Other colour)
-        moves |> Array.exists (fun move -> (board.getSquare (Square.fromString move.dest)) |> Option.exists (fun piece -> piece.pieceType = PieceType.King))
-
     // Move the piece on src square to dest square. Requires:
     // - source and dest squares to be valid pieces
     // - source square to have a piece belonging to current player
@@ -389,10 +380,40 @@
         | true -> Some testBoard
         | false -> None
 
+    // generates moves without for colour given board state.
+    // Does not restrict moves which:
+    // - would place this colour in check
+    let internal generateMovesForColour (board : Board) (colour : PieceColour) : Move[] = 
+        let pieces = gatherPiecesForColour board colour
+        let validMoves = pieces |> Array.map (fun (sq,p) -> (generateMovesForPiece board p sq) |> List.map (fun sqDest -> {src = (Square.toString sq); dest = (Square.toString sqDest)}) |> List.toArray)
+        validMoves |> Array.concat
+    
+    let internal isInCheck (board : Board) (colour : PieceColour) =
+        let moves = generateMovesForColour board (PieceColour.Other colour)
+        moves |> Array.exists (fun move -> (board.getSquare (Square.fromString move.dest)) |> Option.exists (fun piece -> piece.pieceType = PieceType.King))
+
+    let internal isMoveLegal board move colour = 
+        match tryApplyMove board move with
+        | Some b -> not (isInCheck board colour)
+        | None -> false
+
+    let generateLegalMovesForColour board colour =
+        let otherColour = PieceColour.Other colour
+        let moves = generateMovesForColour board colour
+        moves |> Array.filter (fun m -> isMoveLegal board m colour)
+    
     // generate valid moves for all pieces
-    let generateValidMoves (board : Board) : Move [] =
+    let generateLegalMoves (board : Board) : Move [] =
         let turnColour = (turnColour board)
-        generateValidMovesForColour board turnColour
+        generateLegalMovesForColour board turnColour
         |> Array.filter (fun move -> match tryApplyMove board move with
                                      | Some b -> not (isInCheck board turnColour)
                                      | None -> false)
+     
+     // generate possible moves for pieces of current turn colour
+     //     (test that each of them doesn't result in the king being in check)
+     // filter this list of moves where the king is in check
+
+     // is in check (colour)
+     // generate moves for other colour
+     // is there a move which results in the capture of our king?
